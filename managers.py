@@ -1,6 +1,12 @@
 import sqlite3
 import os
-#TODO: sort imports
+
+import telebot.async_telebot
+import yaml
+from telebot import types
+
+
+# TODO: sort imports
 
 
 class DBConnection:
@@ -18,7 +24,13 @@ class DBConnection:
 
 class DBManager:
     @staticmethod
-    def connect_db(file: str) -> DBConnection:
+    async def get_db_file_from_config(name: str):
+        with open('./config/config.yml', 'r') as f:
+            cfg = yaml.safe_load(f)
+        return cfg['dbs'][name]['file']
+
+    @staticmethod
+    async def connect_db(file: str) -> DBConnection:
         con = sqlite3.connect(file)
         con.row_factory = sqlite3.Row
         cur = con.cursor()
@@ -26,57 +38,22 @@ class DBManager:
         return dbcon
 
     @staticmethod
-    async def init_db(dbcon: DBConnection, init_func: callable):
-        await init_func(dbcon)
-        dbcon.save_and_close()
-
-    @staticmethod
     async def query(file: str, query: str) -> sqlite3.Row:
-        dbcon = DBManager.connect_db(file)
+        dbcon = await DBManager.connect_db(file)
         dbcon.cur.execute(query)
-        res = dbcon.cur.fetchall()
+        res: sqlite3.Row = dbcon.cur.fetchall()
+        dbcon.save_and_close()
         return res
 
 
-class RashStatusType:
-    permission = "permission"
-
-
-class RashStatus:
-    def __init__(self, type: str) -> None:
-        self.type = type
-
-
-class BotMenuNavigationEndpoint:
-    def __init__(self, path: str, rash_statuses: list[RashStatus], py_modules: list[str]) -> None:
-        self.path = path
-        self.rash_statuses = rash_statuses
-        self.py_modules = {}
-        for module in py_modules:
-            match module:
-                case "main.py":
-                    self.py_modules['main'] = module
-        if 'main' in self.py_modules.keys():
-            module = __import__(f"{'.'.join(path.split('/')[1:])}.main", fromlist='main')
-            self.run_func = module.handle_menu
-
-
-class BotMenuNavigationManager:
+class MenuNavigationManager:
     @staticmethod
-    def get_menu_endpoint(_path: str):
-        path = f"./{_path}"
-        subfiles = os.listdir(path)
-        subfiles_d = {}
-        for subfile in subfiles:
-            subfile_type = subfile.split(".")[-1]
-            try:
-                subfiles_d[subfile_type]
-            except KeyError:
-                subfiles_d[subfile_type] = []
-            subfiles_d[subfile_type].append(subfile)
-        endp = BotMenuNavigationEndpoint(
-            path,
-            subfiles_d['rash_status'],
-            subfiles_d['py']
-        )
-        return endp
+    async def handle_menu(
+            path: str,
+            bot: telebot.async_telebot.AsyncTeleBot,
+            msg: types.Message,
+            user: types.User,
+            *args
+    ):
+        module = __import__(f"{'.'.join(path.split('/'))}.main", fromlist="main")
+        await module.handle_menu(bot, msg, user,  *args)

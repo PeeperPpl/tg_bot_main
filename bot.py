@@ -4,6 +4,8 @@ import yaml
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 
+from managers import MenuNavigationManager
+
 with open('./config/config.yml', 'r') as f:
     cfg_main = yaml.safe_load(f)
 
@@ -20,14 +22,15 @@ async def cmd_start(msg: types.Message):
     ))
     await bot.reply_to(
         msg,
-        f"Привет, @{msg.from_user.username}"
+        f"Привет, @{msg.from_user.username}",
+        reply_markup=markup
     )
 
 
-@bot.callback_query_handler
+@bot.callback_query_handler(func=lambda call: True)
 async def callback_inline(query: types.CallbackQuery):
     data = query.data
-    directory = f'./{data}/'
+    await MenuNavigationManager.handle_menu(data, bot, query.message, query.from_user)
 
 
 async def run():
