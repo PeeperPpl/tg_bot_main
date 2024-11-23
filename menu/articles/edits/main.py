@@ -12,7 +12,7 @@ async def handle_menu(bot: AsyncTeleBot, msg: types.Message, user: types.User, a
     for edit in edits:
         markup.add(types.InlineKeyboardButton(
             text=f'{edit['old']} > {edit['new']}',
-            callback_data=f'menu/articles/edits/edit'
+            callback_data=f'menu/articles/edits/view?edit_id={edit['edit_id']}'
         ))
     markup.add(types.InlineKeyboardButton(
         text='Добавить правку',
