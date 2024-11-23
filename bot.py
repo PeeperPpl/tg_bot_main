@@ -23,6 +23,7 @@ async def callback_inline(query: types.CallbackQuery):
     data = query.data
     path = data.split('?')[0]
     args = None
+    parsed_args = None
     try:
         args = data.split('?')[1]
     except Exception: pass

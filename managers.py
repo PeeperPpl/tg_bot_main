@@ -37,10 +37,10 @@ class DBManager:
         return dbcon
 
     @staticmethod
-    async def query(file: str, query: str, params: tuple = tuple()) -> sqlite3.Row:
+    async def query(file: str, query: str, params: tuple = tuple()) -> list[sqlite3.Row]:
         dbcon = await DBManager.connect_db(file)
         dbcon.cur.execute(query, params)
-        res: sqlite3.Row = dbcon.cur.fetchall()
+        res = dbcon.cur.fetchall()
         dbcon.save_and_close()
         return res
 
