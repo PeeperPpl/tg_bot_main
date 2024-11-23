@@ -1,7 +1,7 @@
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
-from managers import DBManager
+from managers import DBManager, EmojiManager
 
 
 async def handle_menu(bot: AsyncTeleBot, msg: types.Message, user: types.User, edit_id: int):
@@ -15,12 +15,18 @@ async def handle_menu(bot: AsyncTeleBot, msg: types.Message, user: types.User, e
     text += f'Строка: {edit_info['line']}\nСимвол: {edit_info['column']}'
     text += f'```diff\n-{edit_info['old']}\n+{edit_info['new']}\n```'
     markup = types.InlineKeyboardMarkup()
+    if edit_user.id == user.id:
+        markup.add(types.InlineKeyboardButton(
+            text=f'{EmojiManager.get_emoji('pencil')} Редактировать',
+            callback_data=f'menu/articles/edits/edit?edit_id={edit_id}'
+        ), types.InlineKeyboardButton(
+            text=f'{EmojiManager.get_emoji('trash_basket')} Удалить',
+            callback_data=f'menu/articles/edits/delete?edit_id={edit_id}'
+        ))
     markup.add(types.InlineKeyboardButton(
         text='Назад',
         callback_data=f'menu/articles/edits?article_id={edit_info['article_id']}'
     ))
-    if edit_user.id == user.id:
-        ...
     await bot.send_message(
         text=text,
         chat_id=msg.chat.id,
