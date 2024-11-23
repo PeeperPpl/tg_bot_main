@@ -1,5 +1,4 @@
 import sqlite3
-import os
 
 import telebot.async_telebot
 import yaml
@@ -38,9 +37,9 @@ class DBManager:
         return dbcon
 
     @staticmethod
-    async def query(file: str, query: str) -> sqlite3.Row:
+    async def query(file: str, query: str, params: tuple = tuple()) -> sqlite3.Row:
         dbcon = await DBManager.connect_db(file)
-        dbcon.cur.execute(query)
+        dbcon.cur.execute(query, params)
         res: sqlite3.Row = dbcon.cur.fetchall()
         dbcon.save_and_close()
         return res
@@ -53,7 +52,19 @@ class MenuNavigationManager:
             bot: telebot.async_telebot.AsyncTeleBot,
             msg: types.Message,
             user: types.User,
-            *args
+            **kwargs
     ):
         module = __import__(f"{'.'.join(path.split('/'))}.main", fromlist="main")
-        await module.handle_menu(bot, msg, user,  *args)
+        await module.handle_menu(bot, msg, user, **kwargs)
+        del module
+
+
+class EmojiManager:
+    @staticmethod
+    def get_emoji(name: str) -> str:
+        with open('./config/config.yml', 'r', encoding='utf') as f:
+            cfg = yaml.safe_load(f)
+        try:
+            return cfg['emojis'][name]
+        except KeyError:
+            return ''
